@@ -22,7 +22,7 @@ def worker(screen, *, queue, game):
             for col in range(width):
                 screen.addch(row, 2 * col, "O" if board[row][col] else " ")
         frame += 1
-        screen.addstr(height, 0, f"frame: {frame}")
+        screen.addstr(height, 0, 'frame: {frame}'.format(frame=frame))
         screen.refresh()
         game(frame)
         queue.task_done()
