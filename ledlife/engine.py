@@ -1,34 +1,42 @@
-# Simple implementation of conveys game of life
-from random import randint
-from time import sleep
-from . import noise
+"""
+Game of Life engine with a noisy twist
+"""
+from collections import deque
 from functools import reduce
+from time import sleep
 
-width = 32
-height = 32
-
-frames_per_second = 1
+from . import noise, state
+from .config import FRAME_DELAY, HEIGHT, WIDTH
 
 
 def _empty_board():
+    """Create an empty board (two dimensional "array" of HEIGHTxWIDTH)"""
     return [
-        row for row in [[False for _ in range(width)] for _ in range(height)]
+        row for row in [[False for _ in range(WIDTH)] for _ in range(HEIGHT)]
     ]
 
 
-def _cell(y_off, x_off, y, x):
-    return (y + height + y_off) % height, (x + width + x_off) % width
+def _cell(y_off, x_off, y, x):  # pylint: disable=invalid-name
+    """return cell relative to y, x (board wraps around both in y and x directions)"""
+    return (y + HEIGHT + y_off) % HEIGHT, (x + WIDTH + x_off) % WIDTH
 
 
 def _next_state(board):
+    """calculate the next state of the board according to the rules"""
     new_board = _empty_board()
 
-    for yy in range(height):
-        for xx in range(width):
+    # pylint: disable=invalid-name
+    for yy in range(HEIGHT):
+        for xx in range(WIDTH):
             # abusing the fact that True == 1 and False == 0
             p = reduce(lambda a, b: a + b, [
-                board[y][x] for y, x in [_cell(y_off, x_off, yy, xx) for y_off, x_off in [
-                    (-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]]])
+                board[y][x]
+                for y, x in [
+                    _cell(y_off, x_off, yy, xx)
+                    for y_off, x_off in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (
+                        0, 1), (1, -1), (1, 0), (1, 1)]
+                ]
+            ])
             if board[yy][xx]:
                 new_board[yy][xx] = p in [2, 3]
             else:
@@ -36,27 +44,40 @@ def _next_state(board):
     return new_board
 
 
-class FrameError(Exception):
-    pass
+def _stalled(boards):
+    """Check if the game has stalled (static or alternating between two states)"""
+    return (boards[0] == boards[2]) or (boards[1] == boards[2])
 
 
 def run(display, sync_queue):
+    """Run the game of life"""
+    while not noise.available():
+        sleep(0.2)
+
+    # simplify the logic by assuming we have already run two steps
+    # then add the starting board of pure noise as the next one
+    # to be displayed
+    boards = deque([[], []])
     board = _empty_board()
-    # Start with a random board
+    noise.add(board)
+    boards.append(board)
+
+    # now we can run the game without too much trouble
     try:
-        noise.add(board=board, height=height, width=width)
-        while True:
+        while state.RUNNING:
+            # Show current state of the game
             display(board)
             frame = sync_queue.get()
-            if frame is None:
-                sync_queue.task_done()
-                raise FrameError()
+            if frame is None:  # if there was a display issue, quit
+                break
+            sleep(FRAME_DELAY)
+
+            # calculate next state and add noise if the game has stalled
             board = _next_state(board)
-            sync_queue.task_done()
-            sleep(0.2)
-        display(None)
-    except FrameError:
-        pass
-    except:
-        display(None)
-        raise
+            boards.popleft()
+            boards.append(board)
+            if _stalled(boards):
+                noise.add(board)
+    finally:
+        state.RUNNING = False
+        display(None)  # tell the display we are quitting

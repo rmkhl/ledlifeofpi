@@ -1,28 +1,36 @@
-from . import engine
-from . import terminal
+"""
+Game of life main
+
+Start the _THREADS that handle the noise, display and running the game
+"""
 import queue
 import threading
 from functools import partial
 from time import sleep
 
+from . import engine, noise, state, terminal
+
 print("Hello world")
 sleep(1)
 
-dsp_queue = queue.Queue()
-frame_queue = queue.Queue()
+_DSP_QUEUE = queue.Queue()
+_FRAME_QUEUE = queue.Queue()
 
-threads = []
+_THREADS = []
+
+state.RUNNING = True
 
 for t in [
-        threading.Thread(
-            target=partial(terminal.run, queue=dsp_queue, game=frame_queue.put)),
-        threading.Thread(
-            target=partial(engine.run, display=dsp_queue.put, sync_queue=frame_queue))
+        threading.Thread(target=noise.run), threading.Thread(target=partial(
+            terminal.run, queue=_DSP_QUEUE, game=_FRAME_QUEUE.put)),
+        threading.Thread(target=partial(
+            engine.run, display=_DSP_QUEUE.put, sync_queue=_FRAME_QUEUE))
 ]:
-    threads.append(t)
+    _THREADS.append(t)
     t.start()
 
-for thread in threads:
+# Collect the _THREADS and quit
+for thread in _THREADS:
     thread.join()
 
 print("That is all folks")
