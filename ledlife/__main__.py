@@ -10,13 +10,12 @@ from time import sleep
 
 from . import engine, noise, state, terminal
 
-print("Hello world")
-sleep(1)
-
 _DSP_QUEUE = queue.Queue()
 _FRAME_QUEUE = queue.Queue()
 
 _THREADS = []
+
+sleep(1)
 
 state.RUNNING = True
 
@@ -32,5 +31,3 @@ for t in [
 # Collect the _THREADS and quit
 for thread in _THREADS:
     thread.join()
-
-print("That is all folks")
