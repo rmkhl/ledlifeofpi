@@ -8,7 +8,7 @@ import threading
 from functools import partial
 from time import sleep
 
-from . import engine, noise, state, terminal
+from . import engine, noise, state, display
 
 _DSP_QUEUE = queue.Queue()
 _FRAME_QUEUE = queue.Queue()
@@ -21,7 +21,7 @@ state.RUNNING = True
 
 for t in [
         threading.Thread(target=partial(
-            terminal.run, queue=_DSP_QUEUE, game=_FRAME_QUEUE.put)),
+            display.run, queue=_DSP_QUEUE, game=_FRAME_QUEUE.put)),
         threading.Thread(target=partial(
             engine.run, display=_DSP_QUEUE.put, sync_queue=_FRAME_QUEUE))
 ]:
