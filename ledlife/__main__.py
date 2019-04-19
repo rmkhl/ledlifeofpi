@@ -10,18 +10,17 @@ from time import sleep
 
 from . import engine, noise, state, terminal
 
-print("Hello world")
-sleep(1)
-
 _DSP_QUEUE = queue.Queue()
 _FRAME_QUEUE = queue.Queue()
 
 _THREADS = []
 
+sleep(1)
+
 state.RUNNING = True
 
 for t in [
-        threading.Thread(target=noise.run), threading.Thread(target=partial(
+        threading.Thread(target=partial(
             terminal.run, queue=_DSP_QUEUE, game=_FRAME_QUEUE.put)),
         threading.Thread(target=partial(
             engine.run, display=_DSP_QUEUE.put, sync_queue=_FRAME_QUEUE))
@@ -32,5 +31,3 @@ for t in [
 # Collect the _THREADS and quit
 for thread in _THREADS:
     thread.join()
-
-print("That is all folks")

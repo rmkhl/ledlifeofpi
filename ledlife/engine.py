@@ -51,8 +51,6 @@ def _stalled(boards):
 
 def run(display, sync_queue):
     """Run the game of life"""
-    while not noise.available():
-        sleep(0.2)
 
     # simplify the logic by assuming we have already run two steps
     # then add the starting board of pure noise as the next one
