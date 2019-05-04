@@ -10,13 +10,9 @@ from luma.led_matrix.device import max7219
 from math import floor
 
 
-# LED strip wonder, every strip is different and blocks are orientated 
-# every which way so we need this mapping function to match logical 
-# to display point
+# The "panel" is mounted upside down :)
 def _mapping(x, y):
-    r = floor(x / 8)
-    x = ((r * 8) + 7) - (x % 8)
-    return (y, x)
+    return (31-x, 31-y)
 
 
 def run(*, queue, game):
